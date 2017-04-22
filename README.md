@@ -6,6 +6,12 @@
 
 ![Bot3](./assets/plow-bot1.jpeg?raw=true "")
 
+![Bot3](./assets/plow-bot7.jpeg?raw=true "")
+
+![Bot3](./assets/plow-bot8.jpeg?raw=true "")
+
+![Bot3](./assets/plow-bot9.jpeg?raw=true "")
+
 ![Bot4](./assets/plow-bot3.jpeg?raw=true "")
 
 ![Bot5](./assets/plow-bot6.jpeg?raw=true "")
