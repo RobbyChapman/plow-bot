@@ -9,38 +9,40 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
-#include "hal_spi_rf_trxeb.h"
-#include "cc112x_spi.h"
-#include "io_pin_int.h"
-#include "cc112x_easy_link_reg_config.h"
 #include "plow_bot_utils.h"
 #include "radio_utils.h"
+#include "plow_joystick.h"
 
-#define txGpioIsrPin    BIT2
+#define TX_GPIO_ISR_PIN     BIT2
+#define TX_GPIO_ISR_PORT    1
 
 static void runTxPacketTest(void);
-static void radioTxCompleteHandler(uint8_t bytes, size_t len);
+static void radioTxCompleteHandler(uint8_t *bytes, size_t len);
 
 int main(void) {
 
     /* Stop watchdog timer */
     WDTCTL = WDTPW | WDTHOLD;
+    /* Configure radio for SPI */
     configRadioSpi();
+    /* Set default register values */
     configRadioRegisters();
+    /* We need to enable global interrupts */
     __enable_interrupt();
+    /* Quick RX test */
     runTxPacketTest();
 }
 
-static void radioTxCompleteHandler(uint8_t bytes, size_t len) {
+static void radioTxCompleteHandler(uint8_t *bytes, size_t len) {
 
-    printf("We have the TX packet!");
+    printf("We have the TX packet! \n");
 }
 
 static void runTxPacketTest(void) {
 
     /* Initialize packet buffer of size PKTLEN + 1 */
     uint8_t txBuffer[PKTLEN+1] = {0};
-    RadioConfig config = {.mode = RadioModeTx, .isrPort = IO_PIN_PORT_1, .isrPin = txGpioIsrPin};
+    RadioConfig config = {.mode = RadioModeTx, .isrPort = TX_GPIO_ISR_PORT, .isrPin = TX_GPIO_ISR_PIN};
 
     initRadioWithConfig(&config);
     /* Infinite loop */

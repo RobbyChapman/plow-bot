@@ -37,7 +37,7 @@ void main(void) {
 
 static void radioRxCompleteHandler(uint8_t bytes, size_t len) {
 
-    printf("We have the RX packet!");
+    printf("We have the RX packet! \n");
 }
 
 static void runRxPacketTest(void) {

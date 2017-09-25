@@ -26,6 +26,11 @@
 	</natures>
 	<linkedResources>
 		<link>
+			<name>joystick</name>
+			<type>2</type>
+			<location>C:/Users/Robert.Chapman/Documents/Git_Workspaces/plow-bot/src/common/joystick</location>
+		</link>
+		<link>
 			<name>utils</name>
 			<type>2</type>
 			<location>C:/Users/Robert.Chapman/Documents/Git_Workspaces/plow-bot/src/utils</location>
