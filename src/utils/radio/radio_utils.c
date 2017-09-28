@@ -22,6 +22,7 @@
 #define RX_FIFO_ERROR           0x11
 #define ISR_ACTION_REQUIRED     1
 #define ISR_IDLE                0
+#define PACKET_COUNT_MAX        10
 
 static void radioRxISR(void);
 static void radioTxISR(void);
@@ -29,6 +30,7 @@ static void setRadioInterrupt(RadioConfig *config);
 
 static RadioConfig radioConfig;
 static volatile uint8_t  packetSemaphore;
+static uint32_t txPacketCount = 0;
 
 static void setRadioInterrupt(RadioConfig *config) {
 
@@ -64,6 +66,11 @@ void initRadioWithConfig(RadioConfig *config) {
 
 void transmitPacket(RadioPacket *packet) {
 
+    ++txPacketCount;
+    if (txPacketCount >= PACKET_COUNT_MAX) {
+        txPacketCount = 0;
+        packet->payload[2] = 0xAB;
+    }
     /* Write packet to TX FIFO */
     cc112xSpiWriteTxFifo(packet->payload, packet->len);
     /* Strobe TX to send packet */

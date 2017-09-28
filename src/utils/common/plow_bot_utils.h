@@ -10,6 +10,7 @@
 
 #include <msp430.h>
 #include <stdint.h>
+#include <stddef.h>
 
 #define PKTLEN                  30
 
@@ -18,5 +19,6 @@
 
 void waitMs(uint16_t mSec);
 void createPacket(uint8_t txBuffer[]);
+void dumpHex(uint8_t *bytes, size_t len);
 
 #endif

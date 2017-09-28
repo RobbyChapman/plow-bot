@@ -19,7 +19,7 @@
 #define txGpioIsrPin    BIT2
 
 static void runRxPacketTest(void);
-static void radioRxCompleteHandler(uint8_t bytes, size_t len);
+static void radioRxCompleteHandler(uint8_t *bytes, size_t len);
 
 void main(void) {
 
@@ -35,9 +35,10 @@ void main(void) {
     runRxPacketTest();
 }
 
-static void radioRxCompleteHandler(uint8_t bytes, size_t len) {
+static void radioRxCompleteHandler(uint8_t *bytes, size_t len) {
 
     printf("We have the RX packet! \n");
+    dumpHex(bytes, len);
 }
 
 static void runRxPacketTest(void) {
