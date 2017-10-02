@@ -64,6 +64,8 @@
 * DEFINES
 */
 #define MASTER                  0
+#define TELEM_OP_CODE           0xBB
+
 #define ISR_ACTION_REQUIRED     1
 #define ISR_IDLE                0
 
@@ -142,6 +144,7 @@ static void runTX(void) {
 
     // Initialize packet buffer of size PKTLEN + 1
     uint8_t txBuffer[PKTLEN+1] = {0};
+    static uint16_t txPacketCount = 0;
 
     // Connect ISR function to GPIO2
     ioPinIntRegister(IO_PIN_PORT_1, GPIO2, &radioTxISR);
@@ -162,11 +165,18 @@ static void runTX(void) {
     while(1) {
                 // Update packet counter
                 packetCounter++;
+                txPacketCount++;
 
                 // Create a random packet with PKTLEN + 2 byte packet
                 // counter + n x random bytes
                 createPacket(txBuffer);
 
+                // Adding logic for opCode
+                if (txPacketCount >= 50) {
+                    txPacketCount = 0;
+                    // BB is our special byte in this case
+                    txBuffer[3] = TELEM_OP_CODE;
+                }
                 // Write packet to TX FIFO
                 cc112xSpiWriteTxFifo(txBuffer, sizeof(txBuffer));
 
@@ -185,6 +195,7 @@ static void runTX(void) {
                 waitMs(3*(rand()%10+3));
     }
 }
+
 
 static void runRX(void) {
 
@@ -243,7 +254,9 @@ static void runRX(void) {
                         // Update packet counter
                         packetCounter++;
                         rxCountBuffer[packetCounter] = rxBuffer[1] | rxBuffer[2];
-                        _no_operation();
+                        if (rxBuffer[3] == TELEM_OP_CODE) {
+                            _no_operation();
+                        }
                     }
                 }
             }
@@ -368,7 +381,7 @@ static void createPacket(uint8_t txBuffer[]) {
 
     // Fill rest of buffer with random bytes
     for(uint8_t i = 3; i < (PKTLEN + 1); i++) {
-        txBuffer[i] = (uint8_t)rand();
+        txBuffer[i] = 0x00;
     }
 }
 
