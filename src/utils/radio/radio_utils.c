@@ -8,12 +8,14 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
+#include <stdbool.h>
 #include <msp430.h>
 #include "cc112x_spi.h"
 #include "io_pin_int.h"
 #include "radio_utils.h"
 #include "hal_spi_rf_trxeb.h"
 #include "cc112x_easy_link_reg_config.h"
+#include "plow_bot_utils.h"
 
 #define FS_CHP_INDEX            2
 #define FS_VCO2_INDEX           0
@@ -23,6 +25,7 @@
 #define ISR_ACTION_REQUIRED     1
 #define ISR_IDLE                0
 #define PACKET_COUNT_MAX        10
+#define TELEM_OP_CODE           0xBB
 
 static void radioRxISR(void);
 static void radioTxISR(void);
@@ -62,6 +65,8 @@ void initRadioWithConfig(RadioConfig *config) {
         /* Set radio in RX */
         trxSpiCmdStrobe(CC112X_SRX);
     }
+    P1DIR = 0x01;
+    P1OUT = 0x00;
 }
 
 void transmitPacket(RadioPacket *packet) {
@@ -69,7 +74,7 @@ void transmitPacket(RadioPacket *packet) {
     ++txPacketCount;
     if (txPacketCount >= PACKET_COUNT_MAX) {
         txPacketCount = 0;
-        packet->payload[2] = 0xAB;
+        packet->payload[3] = TELEM_OP_CODE;
     }
     /* Write packet to TX FIFO */
     cc112xSpiWriteTxFifo(packet->payload, packet->len);
@@ -77,8 +82,38 @@ void transmitPacket(RadioPacket *packet) {
     trxSpiCmdStrobe(CC112X_STX);
     /* Wait until transmission is finished */
     while(packetSemaphore != ISR_ACTION_REQUIRED);
-     packetSemaphore = ISR_IDLE;
+    packetSemaphore = ISR_IDLE;
      if (packet->handler) packet->handler(packet->payload, packet->len);
+     P1OUT |= BIT0 ;
+     waitMs(3);
+     P1OUT &= ~(BIT0);
+
+     if (packet->payload[3] == TELEM_OP_CODE) {
+
+         P1OUT |= BIT0 ;
+         waitMs(30);
+         P1OUT &= ~(BIT0);
+         trxSpiCmdStrobe(CC112X_SFTX);
+         trxSpiCmdStrobe(CC112X_SFRX);
+         trxSpiCmdStrobe(CC112X_SIDLE);
+         trxSpiCmdStrobe(CC112X_SRX);
+
+         bool isFinished = false;
+         uint32_t tick = 0;
+         do {
+          tick++;
+           waitMs(1);
+           if (packetSemaphore == ISR_ACTION_REQUIRED) {
+               isFinished = true;
+           }
+           if (tick >= 300) {
+               isFinished = true;
+           }
+         } while(!isFinished);
+         trxSpiCmdStrobe(CC112X_SFTX);
+         trxSpiCmdStrobe(CC112X_SFRX);
+         trxSpiCmdStrobe(CC112X_SIDLE);
+     }
 }
 
 void receivePacket(RadioPacket *packet) {
@@ -107,6 +142,14 @@ void receivePacket(RadioPacket *packet) {
                 if (packet->payload[packet->len - 1] & 0x80) {
                     /* Finished, notify caller */
                     if (packet->handler) packet->handler(packet->payload, packet->len);
+                    /* Handle packet */
+                    if (packet->payload[3] == TELEM_OP_CODE) {
+                        // Blink LED to show TX sent packet
+                        P1OUT |= BIT0;
+                        waitMs(3);
+                        P1OUT &= ~(BIT0);
+                        return;
+                    }
                 }
             }
         }

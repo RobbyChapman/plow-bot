@@ -48,8 +48,8 @@ void main(void) {
 
 static void radioRxCompleteHandler(uint8_t *bytes, size_t len) {
 
-    LOG_DEBUG("Rx handler: Packet count: %i \r\n", packetCount);
-    dumpHex(bytes, len);
+    //LOG_DEBUG("Rx handler: Packet count: %i \r\n", packetCount);
+    //dumpHex(bytes, len);
 }
 
 static void runRxPacketTest(void) {
