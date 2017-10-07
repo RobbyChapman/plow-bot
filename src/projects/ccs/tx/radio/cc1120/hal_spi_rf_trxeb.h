@@ -72,7 +72,7 @@
 
 /* Macros for Tranceivers(TRX) */
 #define TRXEM_SPI_BEGIN()              st( TRXEM_CS_PORT_OUT &= ~TRXEM_SPI_SC_N_PIN; NOP();)
-#define TRXEM_SPI_TX(x)                st( UCB1IFG &= ~UCRXIFG; UCB1TXBUF= (x); )
+#define JOY_SPI_TX(x)                st( UCB1IFG &= ~UCRXIFG; UCB1TXBUF= (x); )
 #define TRXEM_SPI_WAIT_DONE()          st( while(!(UCB1IFG & UCRXIFG)); )
 #define TRXEM_SPI_RX()                 UCB1RXBUF
 #define TRXEM_SPI_WAIT_MISO_LOW(x)     st( uint8 count = 200; \

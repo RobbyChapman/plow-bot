@@ -91,7 +91,7 @@ void transmitPacket(RadioPacket *packet) {
      if (packet->payload[3] == TELEM_OP_CODE) {
 
          P1OUT |= BIT0 ;
-         waitMs(30);
+         waitMs(5);
          P1OUT &= ~(BIT0);
          trxSpiCmdStrobe(CC112X_SFTX);
          trxSpiCmdStrobe(CC112X_SFRX);
@@ -105,8 +105,32 @@ void transmitPacket(RadioPacket *packet) {
            waitMs(1);
            if (packetSemaphore == ISR_ACTION_REQUIRED) {
                isFinished = true;
+               packetSemaphore = ISR_IDLE;
+               uint8_t numBytes = 0, marcState = 0;
+               cc112xSpiReadReg(CC112X_NUM_RXBYTES, &numBytes, 1);
+               /* Check that we have bytes in FIFO */
+               if (numBytes != 0) {
+                   /* Read MARCSTATE to check for RX FIFO error */
+                   cc112xSpiReadReg(CC112X_MARCSTATE, &marcState, 1);
+                   /* Mask out MARCSTATE bits and check if we have a RX FIFO error */
+                   if ((marcState & 0x1F) == RX_FIFO_ERROR) {
+                       /* Flush RX FIFO */
+                       trxSpiCmdStrobe(CC112X_SFRX);
+                   } else {
+                       /* Read n bytes from RX FIFO */
+                       uint8_t test[15] = {0};
+                       cc112xSpiReadRxFifo(test, numBytes);
+                       _no_operation();
+
+                       for (int i = 0; i < 5; i++) {
+                           P1OUT |= BIT0 ;
+                           waitMs(3);
+                           P1OUT &= ~(BIT0);
+                       }
+                   }
+               }
            }
-           if (tick >= 300) {
+           if (tick >= 200) {
                isFinished = true;
            }
          } while(!isFinished);
@@ -148,6 +172,45 @@ void receivePacket(RadioPacket *packet) {
                         P1OUT |= BIT0;
                         waitMs(3);
                         P1OUT &= ~(BIT0);
+
+                        trxSpiCmdStrobe(CC112X_SFTX);
+                        trxSpiCmdStrobe(CC112X_SFRX);
+                        //trxSpiCmdStrobe(CC112X_SIDLE);
+
+                        uint8_t txBuffer[PKTLEN+1] = {0};
+                        /* Create a random packet with PKTLEN + 2 byte packet counter + n x random bytes */
+                        createPacket(txBuffer);
+                        txBuffer[3] = 0xAA;
+                        txBuffer[4] = 0xBB;
+                        txBuffer[5] = 0xCC;
+                        /* Write packet to TX FIFO */
+
+                        //waitMs(10);
+                        for (int i = 0; i < 2; i++) {
+                            cc112xSpiWriteTxFifo(txBuffer, sizeof(txBuffer));
+                            trxSpiCmdStrobe(CC112X_STX);
+                            while(packetSemaphore != ISR_ACTION_REQUIRED);
+                            packetSemaphore = ISR_IDLE;
+                        }
+
+                        bool isFinished = false;
+                        uint32_t tick = 0;
+                        do {
+                         tick++;
+                          waitUs(10);
+                          if (packetSemaphore == ISR_ACTION_REQUIRED) {
+                              packetSemaphore = ISR_IDLE;
+                              isFinished = true;
+                          }
+                          if (tick >= 200) {
+                              isFinished = true;
+                          }
+                        } while(!isFinished);
+
+                        trxSpiCmdStrobe(CC112X_SFTX);
+                        trxSpiCmdStrobe(CC112X_SFRX);
+                        //trxSpiCmdStrobe(CC112X_SIDLE);
+                        trxSpiCmdStrobe(CC112X_SRX);
                         return;
                     }
                 }

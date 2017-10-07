@@ -63,6 +63,5 @@ static void runTxPacketTest(void) {
         createPacket(txBuffer);
         RadioPacket packet = {.payload = txBuffer, .len = sizeof(txBuffer), .handler = (RadioRxTxHandler)radioTxCompleteHandler};
         transmitPacket(&packet);
-        //waitMs(100);
     }
 }

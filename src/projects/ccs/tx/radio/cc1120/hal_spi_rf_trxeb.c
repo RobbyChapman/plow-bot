@@ -42,10 +42,10 @@
       #define     RF_SCLK_PIN            BIT2
 
       /* Transceiver chip select signal */
-      #define     RF_CS_N_PORT_SEL       P4SEL1
-      #define     RF_CS_N_PORT_DIR       P4DIR
-      #define     RF_CS_N_PORT_OUT       P4OUT
-      #define     RF_CS_N_PIN            BIT4
+      #define     JOY_SPI_CS_PORT_SEL       P4SEL1
+      #define     JOY_SPI_CS_PORT_DIR       P4DIR
+      #define     JOY_SPI_CS_PORT_OUT       P4OUT
+      #define     JOY_SPI_CS_PIN            BIT4
       #define     RF_RESET_N_PORT_SEL1   P8SEL1
       #define     RF_RESET_N_PORT_SEL0   P8SEL0
 /******************************************************************************
@@ -117,9 +117,9 @@ void trxRfSpiInterfaceInit(uint8_t prescalerValue) {
     UCB1BR0 = prescalerValue;
 
     // Chip select
-    RF_CS_N_PORT_SEL &= ~RF_CS_N_PIN;
-    RF_CS_N_PORT_DIR |= RF_CS_N_PIN;
-    RF_CS_N_PORT_OUT |= RF_CS_N_PIN;
+    JOY_SPI_CS_PORT_SEL &= ~JOY_SPI_CS_PIN;
+    JOY_SPI_CS_PORT_DIR |= JOY_SPI_CS_PIN;
+    JOY_SPI_CS_PORT_OUT |= JOY_SPI_CS_PIN;
 
     // Configure GPIO MISO MOSI CLK
     RF_PORT_SEL1 &= ~(RF_MOSI_PIN | RF_MISO_PIN | RF_SCLK_PIN);
@@ -141,7 +141,7 @@ rfStatus_t trxSpiCmdStrobe(uint8_t cmd) {
     uint8_t rc;
     TRXEM_SPI_BEGIN();
     while(RF_PORT_IN & RF_MISO_PIN);
-    TRXEM_SPI_TX(cmd);
+    JOY_SPI_TX(cmd);
     TRXEM_SPI_WAIT_DONE();
     rc = TRXEM_SPI_RX();
     TRXEM_SPI_END();
@@ -178,7 +178,7 @@ rfStatus_t trx8BitRegAccess(uint8_t accessType, uint8_t addrByte, uint8_t *pData
   TRXEM_SPI_BEGIN();
   while(TRXEM_MISO_PORT_IN & TRXEM_SPI_MISO_PIN);
   /* send register address byte */
-  TRXEM_SPI_TX(accessType|addrByte);
+  JOY_SPI_TX(accessType|addrByte);
   TRXEM_SPI_WAIT_DONE();
   /* Storing chip status */
   readValue = TRXEM_SPI_RX();
@@ -216,11 +216,11 @@ rfStatus_t trx16BitRegAccess(uint8_t accessType, uint8_t extAddr, uint8_t regAdd
   TRXEM_SPI_BEGIN();
   while(TRXEM_MISO_PORT_IN & TRXEM_SPI_MISO_PIN);
   /* send extended address byte with access type bits set */
-  TRXEM_SPI_TX(accessType|extAddr);
+  JOY_SPI_TX(accessType|extAddr);
   TRXEM_SPI_WAIT_DONE();
   /* Storing chip status */
   readValue = TRXEM_SPI_RX();
-  TRXEM_SPI_TX(regAddr);
+  JOY_SPI_TX(regAddr);
   TRXEM_SPI_WAIT_DONE();
   /* Communicate len number of bytes */
   trxReadWriteBurstSingle(accessType|extAddr,pData,len);
@@ -284,7 +284,7 @@ static void trxReadWriteBurstSingle(uint8_t addr,uint8_t *pData,uint16_t len) {
     {
       for (i = 0; i < len; i++)
       {
-          TRXEM_SPI_TX(0);            /* Possible to combining read and write as one access type */
+          JOY_SPI_TX(0);            /* Possible to combining read and write as one access type */
           TRXEM_SPI_WAIT_DONE();
           *pData = TRXEM_SPI_RX();     /* Store pData from last pData RX */
           pData++;
@@ -292,7 +292,7 @@ static void trxReadWriteBurstSingle(uint8_t addr,uint8_t *pData,uint16_t len) {
     }
     else
     {
-      TRXEM_SPI_TX(0);
+      JOY_SPI_TX(0);
       TRXEM_SPI_WAIT_DONE();
       *pData = TRXEM_SPI_RX();
     }
@@ -304,14 +304,14 @@ static void trxReadWriteBurstSingle(uint8_t addr,uint8_t *pData,uint16_t len) {
       /* Communicate len number of bytes: if TX - the procedure doesn't overwrite pData */
       for (i = 0; i < len; i++)
       {
-        TRXEM_SPI_TX(*pData);
+        JOY_SPI_TX(*pData);
         TRXEM_SPI_WAIT_DONE();
         pData++;
       }
     }
     else
     {
-      TRXEM_SPI_TX(*pData);
+      JOY_SPI_TX(*pData);
       TRXEM_SPI_WAIT_DONE();
     }
   }

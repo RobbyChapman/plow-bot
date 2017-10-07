@@ -18,6 +18,7 @@
 #define NOP()      asm(" nop")
 
 void waitMs(uint16_t mSec);
+void waitUs(uint16_t uSec);
 void createPacket(uint8_t txBuffer[]);
 void dumpHex(uint8_t *bytes, size_t len);
 

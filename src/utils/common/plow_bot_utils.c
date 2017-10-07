@@ -11,8 +11,6 @@
 #include <stdio.h>
 #include "plow_bot_utils.h"
 
-static void waitUs(uint16_t uSec);
-
 void createPacket(uint8_t txBuffer[]) {
 
     txBuffer[0] = PKTLEN;
@@ -32,7 +30,7 @@ void dumpHex(uint8_t *bytes, size_t len) {
     }
 }
 
-static void waitUs(uint16_t uSec) {
+void waitUs(uint16_t uSec) {
 
     while(uSec > 3) {
         NOP();
